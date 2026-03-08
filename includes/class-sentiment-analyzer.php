@@ -14,15 +14,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Sentiment_Analyzer {
 
 	const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+	const CACHE_PREFIX   = 'wc_ai_rm_sentiment_';
+	const CACHE_TTL      = 30 * DAY_IN_SECONDS; // Cache for 30 days
 
 	/**
-	 * Analyze sentiment of review text
+	 * Analyze sentiment of review text with caching
 	 *
 	 * @param string $review_text Review text to analyze.
+	 * @param bool   $use_cache Whether to use cached results.
 	 * @return array Array containing sentiment label and score.
 	 * @throws \Exception If API call fails.
 	 */
-	public static function analyze( $review_text ) {
+	public static function analyze( $review_text, $use_cache = true ) {
 		$api_key = Settings::get_setting( 'gemini_api_key' );
 
 		if ( empty( $api_key ) ) {
@@ -31,14 +34,49 @@ class Sentiment_Analyzer {
 
 		$review_text = sanitize_text_field( $review_text );
 
+		// Check cache first
+		if ( $use_cache ) {
+			$cached = self::get_cached_analysis( $review_text );
+			if ( $cached ) {
+				return $cached;
+			}
+		}
+
 		// Prepare the prompt for sentiment analysis
 		$prompt = self::build_sentiment_prompt( $review_text );
 
-		// Call Gemini API
-		$response = self::call_gemini_api( $prompt, $api_key );
+		// Call Gemini API with retry logic
+		$response = self::call_gemini_api_with_retry( $prompt, $api_key );
 
 		// Parse the response
-		return self::parse_sentiment_response( $response );
+		$result = self::parse_sentiment_response( $response );
+
+		// Cache the result
+		self::cache_analysis( $review_text, $result );
+
+		return $result;
+	}
+
+	/**
+	 * Get cached sentiment analysis
+	 *
+	 * @param string $review_text Review text.
+	 * @return array|false Cached result or false if not found.
+	 */
+	private static function get_cached_analysis( $review_text ) {
+		$cache_key = self::CACHE_PREFIX . md5( $review_text );
+		return wp_cache_get( $cache_key );
+	}
+
+	/**
+	 * Cache sentiment analysis result
+	 *
+	 * @param string $review_text Review text.
+	 * @param array  $result Analysis result.
+	 */
+	private static function cache_analysis( $review_text, $result ) {
+		$cache_key = self::CACHE_PREFIX . md5( $review_text );
+		wp_cache_set( $cache_key, $result, '', self::CACHE_TTL );
 	}
 
 	/**
@@ -49,22 +87,51 @@ class Sentiment_Analyzer {
 	 */
 	private static function build_sentiment_prompt( $review_text ) {
 		return <<<PROMPT
-Analyze the sentiment of the following product review. Respond with ONLY a JSON object (no markdown, no extra text).
+You are a professional sentiment analyst. Analyze the sentiment of this product review.
 
 Review: "$review_text"
 
-Respond with this exact JSON format:
+Respond with ONLY a valid JSON object (no markdown, no backticks, no extra text):
+
 {
   "sentiment": "positive|neutral|negative",
-  "score": <number between 0 and 1>,
-  "summary": "<brief explanation>"
+  "score": <decimal between 0.0 and 1.0>,
+  "summary": "<one sentence explanation>"
 }
 
-Where:
-- sentiment: positive (happy customer), neutral (factual), negative (unhappy customer)
-- score: 1.0 is most positive, 0.0 is most negative
-- summary: One sentence explaining the sentiment
+Classification guide:
+- positive (score 0.7-1.0): Customer is satisfied, happy, or recommends the product
+- neutral (score 0.4-0.6): Factual comment without clear satisfaction or dissatisfaction
+- negative (score 0.0-0.3): Customer is dissatisfied, disappointed, or warns others
+
+Important: Return ONLY the JSON object, nothing else.
 PROMPT;
+	}
+
+	/**
+	 * Call Google Gemini API with retry logic
+	 *
+	 * @param string $prompt Prompt text.
+	 * @param string $api_key API key.
+	 * @param int    $retry_count Current retry count.
+	 * @return string API response text.
+	 * @throws \Exception If request fails after retries.
+	 */
+	private static function call_gemini_api_with_retry( $prompt, $api_key, $retry_count = 0 ) {
+		$max_retries = 3;
+
+		try {
+			return self::call_gemini_api( $prompt, $api_key );
+		} catch ( \Exception $e ) {
+			if ( $retry_count < $max_retries ) {
+				// Exponential backoff: 1s, 2s, 4s
+				$wait_seconds = pow( 2, $retry_count );
+				sleep( $wait_seconds );
+				return self::call_gemini_api_with_retry( $prompt, $api_key, $retry_count + 1 );
+			}
+
+			throw $e;
+		}
 	}
 
 	/**
@@ -86,6 +153,13 @@ PROMPT;
 					),
 				),
 			),
+			// Add safety settings to improve response quality
+			'safety_settings' => array(
+				array(
+					'category' => 'HARM_CATEGORY_UNSPECIFIED',
+					'threshold' => 'BLOCK_NONE',
+				),
+			),
 		);
 
 		$args = array(
@@ -95,6 +169,7 @@ PROMPT;
 			),
 			'timeout'     => 30,
 			'sslverify'   => true,
+			'user-agent'  => 'WooCommerce-AI-Review-Manager/' . WC_AI_REVIEW_MANAGER_VERSION,
 		);
 
 		$url      = self::GEMINI_API_URL . '?key=' . urlencode( $api_key );
@@ -110,6 +185,10 @@ PROMPT;
 		if ( 200 !== $status_code ) {
 			$error_data = json_decode( $body, true );
 			$error_msg  = isset( $error_data['error']['message'] ) ? $error_data['error']['message'] : 'Unknown error';
+
+			// Log errors for debugging
+			error_log( 'Gemini API Error (' . $status_code . '): ' . $error_msg );
+
 			throw new \Exception( 'Gemini API error: ' . $error_msg );
 		}
 
@@ -134,6 +213,8 @@ PROMPT;
 		$parsed = json_decode( $text, true );
 
 		if ( ! is_array( $parsed ) || ! isset( $parsed['sentiment'], $parsed['score'] ) ) {
+			// Log the raw response for debugging
+			error_log( 'Failed to parse sentiment data. Raw: ' . $text );
 			throw new \Exception( 'Failed to parse sentiment data' );
 		}
 
@@ -197,5 +278,20 @@ PROMPT;
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Clear sentiment analysis cache
+	 *
+	 * @param string $review_text Specific review to clear, or empty for all.
+	 */
+	public static function clear_cache( $review_text = '' ) {
+		if ( ! empty( $review_text ) ) {
+			$cache_key = self::CACHE_PREFIX . md5( $review_text );
+			wp_cache_delete( $cache_key );
+		} else {
+			// Clear all sentiment caches
+			wp_cache_flush();
+		}
 	}
 }

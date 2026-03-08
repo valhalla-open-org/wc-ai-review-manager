@@ -96,19 +96,14 @@ class Review_Collector {
 				continue;
 			}
 
-			// Check if customer already left a review
-			$existing_review = get_comments(
-				array(
-					'post_id'  => $product_id,
-					'user_id'  => $customer ? $customer->ID : 0,
-					'type'     => 'comment',
-					'status'   => 'approve',
-					'count'    => true,
-				)
-			);
+			// Check if invitation was already sent for this product/customer combo
+			if ( self::has_invitation_been_sent( $order_id, $product_id, $customer_email ) ) {
+				continue;
+			}
 
-			if ( $existing_review > 0 ) {
-				continue; // Customer already reviewed this product
+			// Check if customer already left a review
+			if ( self::customer_has_reviewed_product( $product_id, $customer ) ) {
+				continue;
 			}
 
 			// Log invitation
@@ -133,7 +128,57 @@ class Review_Collector {
 	}
 
 	/**
-	 * Send invitation email
+	 * Check if invitation was already sent for this product/customer combo
+	 *
+	 * @param int    $order_id Order ID.
+	 * @param int    $product_id Product ID.
+	 * @param string $customer_email Customer email.
+	 * @return bool True if invitation was already sent.
+	 */
+	private static function has_invitation_been_sent( $order_id, $product_id, $customer_email ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'wc_ai_review_invitations';
+
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM $table 
+				WHERE order_id = %d AND product_id = %d AND customer_email = %s",
+				absint( $order_id ),
+				absint( $product_id ),
+				sanitize_email( $customer_email )
+			)
+		);
+
+		return $count > 0;
+	}
+
+	/**
+	 * Check if customer has already reviewed this product
+	 *
+	 * @param int      $product_id Product ID.
+	 * @param WP_User|false $customer Customer object or false.
+	 * @return bool True if customer has reviewed product.
+	 */
+	private static function customer_has_reviewed_product( $product_id, $customer ) {
+		$args = array(
+			'post_id'  => $product_id,
+			'type'     => 'comment',
+			'status'   => 'approve',
+			'count'    => true,
+		);
+
+		if ( $customer ) {
+			$args['user_id'] = $customer->ID;
+		}
+
+		$count = get_comments( $args );
+
+		return $count > 0;
+	}
+
+	/**
+	 * Send invitation email with improved copy
 	 *
 	 * @param string  $customer_email Customer email.
 	 * @param string  $customer_name Customer name.
@@ -143,23 +188,77 @@ class Review_Collector {
 	private static function send_invitation_email( $customer_email, $customer_name, $product, $order ) {
 		$to      = $customer_email;
 		$subject = sprintf(
-			__( 'We\'d love to hear what you think about %s', 'wc-ai-review-manager' ),
+			__( '⭐ Share Your Thoughts About %s', 'wc-ai-review-manager' ),
 			$product->get_name()
 		);
 
 		$product_url = get_permalink( $product->get_id() );
 		$product_url = add_query_arg( 'review-form', '1', $product_url );
 
+		$first_name = explode( ' ', $customer_name )[0];
+
 		$message = sprintf(
-			__( 'Hi %s,\n\nThank you for your recent purchase of %s. We\'d love to hear your thoughts about this product!\n\nYour feedback helps us improve and helps other customers make informed decisions.\n\nReview this product:\n%s\n\nThank you!\n\nBest regards,\nOur Team', 'wc-ai-review-manager' ),
-			esc_html( $customer_name ),
+			__( "Hi %s,
+
+We hope you're enjoying your recent purchase of '%s'!
+
+Your feedback truly matters. Product reviews help us improve our offerings and help other customers make confident decisions. It usually takes just 2-3 minutes to write a review.
+
+Would you take a moment to share your experience?
+
+%s
+
+Whether it's a quick star rating or detailed feedback, we'd love to hear from you!
+
+Thank you for supporting us,
+%s Team",
+				'wc-ai-review-manager'
+			),
+			esc_html( $first_name ),
 			esc_html( $product->get_name() ),
-			esc_url( $product_url )
+			esc_url( $product_url ),
+			esc_html( get_bloginfo( 'name' ) )
 		);
 
-		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+		$headers = array(
+			'Content-Type: text/plain; charset=UTF-8',
+			'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
+		);
 
-		wp_mail( $to, $subject, $message, $headers );
+		/**
+		 * Filter invitation email subject
+		 *
+		 * @param string  $subject Email subject.
+		 * @param WC_Product $product Product object.
+		 * @param WC_Order $order Order object.
+		 */
+		$subject = apply_filters( 'wc_ai_review_manager_invitation_subject', $subject, $product, $order );
+
+		/**
+		 * Filter invitation email message
+		 *
+		 * @param string  $message Email message.
+		 * @param string  $customer_name Customer name.
+		 * @param WC_Product $product Product object.
+		 * @param WC_Order $order Order object.
+		 */
+		$message = apply_filters( 'wc_ai_review_manager_invitation_message', $message, $customer_name, $product, $order );
+
+		$sent = wp_mail( $to, $subject, $message, $headers );
+
+		if ( ! $sent ) {
+			error_log( 'Failed to send review invitation for product ' . $product->get_id() . ' to ' . $customer_email );
+		}
+
+		/**
+		 * Fires when invitation email is sent
+		 *
+		 * @param string  $customer_email Customer email.
+		 * @param WC_Product $product Product.
+		 * @param WC_Order $order Order.
+		 * @param bool    $sent Whether email was sent successfully.
+		 */
+		do_action( 'wc_ai_review_manager_invitation_sent', $customer_email, $product, $order, $sent );
 	}
 
 	/**

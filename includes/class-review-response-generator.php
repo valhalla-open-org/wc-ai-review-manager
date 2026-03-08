@@ -51,6 +51,11 @@ class Review_Response_Generator {
 
 		$review_text = wp_kses_post( $comment->comment_content );
 
+		// Don't analyze very short reviews (likely spam)
+		if ( strlen( trim( $review_text ) ) < 10 ) {
+			return;
+		}
+
 		try {
 			// Analyze sentiment
 			$sentiment_data = Sentiment_Analyzer::analyze( $review_text );
@@ -61,7 +66,7 @@ class Review_Response_Generator {
 			}
 
 			// Generate AI response
-			$ai_response = self::generate_response( $post->ID, $review_text, $sentiment_data );
+			$ai_response = self::generate_response( $post->ID, $review_text, $sentiment_data, $comment );
 
 			// Store in database
 			Database::create_response_record(
@@ -74,21 +79,32 @@ class Review_Response_Generator {
 				$ai_response
 			);
 
+			/**
+			 * Fires after response is generated
+			 *
+			 * @param int    $comment_id Comment ID.
+			 * @param int    $product_id Product ID.
+			 * @param string $ai_response Generated response.
+			 * @param array  $sentiment_data Sentiment analysis data.
+			 */
+			do_action( 'wc_ai_review_manager_response_generated', $comment_id, $post->ID, $ai_response, $sentiment_data );
+
 		} catch ( \Exception $e ) {
 			error_log( 'Failed to generate review response: ' . $e->getMessage() );
 		}
 	}
 
 	/**
-	 * Generate AI response for a review
+	 * Generate AI response for a review with product context
 	 *
 	 * @param int    $product_id Product ID.
 	 * @param string $review_text Original review text.
 	 * @param array  $sentiment_data Sentiment analysis data.
+	 * @param WP_Comment|null $comment Comment object for additional context.
 	 * @return string Generated response.
 	 * @throws \Exception If API call fails.
 	 */
-	public static function generate_response( $product_id, $review_text, $sentiment_data ) {
+	public static function generate_response( $product_id, $review_text, $sentiment_data, $comment = null ) {
 		$api_key = Settings::get_setting( 'gemini_api_key' );
 
 		if ( empty( $api_key ) ) {
@@ -97,10 +113,18 @@ class Review_Response_Generator {
 
 		// Get product details for context
 		$product = wc_get_product( $product_id );
-		$product_name = $product ? $product->get_name() : '';
+		if ( ! $product ) {
+			throw new \Exception( 'Product not found' );
+		}
+
+		$product_name = $product->get_name();
+		$product_type = $product->get_type();
+
+		// Get reviewer rating if available (1-5 stars from WooCommerce)
+		$rating = $comment ? get_comment_meta( $comment->comment_ID, 'rating', true ) : '';
 
 		// Build prompt for response generation
-		$prompt = self::build_response_prompt( $product_name, $review_text, $sentiment_data );
+		$prompt = self::build_response_prompt( $product_name, $product_type, $review_text, $sentiment_data, $rating );
 
 		// Call API
 		$response_body = self::call_gemini_api( $prompt, $api_key );
@@ -115,7 +139,7 @@ class Review_Response_Generator {
 		$response_text = $data['candidates'][0]['content']['parts'][0]['text'];
 
 		// Clean up response (remove markdown code blocks if present)
-		$response_text = preg_replace( '/^```(?:json|text)?\s*\n?/', '', $response_text );
+		$response_text = preg_replace( '/^```(?:json|text|markdown)?\s*\n?/', '', $response_text );
 		$response_text = preg_replace( '/\n?```$/', '', $response_text );
 		$response_text = trim( $response_text );
 
@@ -123,30 +147,50 @@ class Review_Response_Generator {
 	}
 
 	/**
-	 * Build response generation prompt
+	 * Build response generation prompt with rich context
 	 *
 	 * @param string $product_name Product name.
+	 * @param string $product_type Product type (simple, variable, etc).
 	 * @param string $review_text Review text.
 	 * @param array  $sentiment_data Sentiment analysis data.
+	 * @param string $rating Customer rating (1-5 stars).
 	 * @return string Formatted prompt.
 	 */
-	private static function build_response_prompt( $product_name, $review_text, $sentiment_data ) {
+	private static function build_response_prompt( $product_name, $product_type, $review_text, $sentiment_data, $rating = '' ) {
 		$sentiment = $sentiment_data['sentiment'];
+		$score     = $sentiment_data['score'];
+
+		$rating_context = '';
+		if ( $rating ) {
+			$rating_context = "Customer Rating: $rating/5 stars\n";
+		}
+
+		$tone = $score < 0.2 ? 'empathetic and solution-focused' : 'appreciative and constructive';
 
 		return <<<PROMPT
-You are a professional customer service representative for an e-commerce store. A customer left a $sentiment review.
+You are a professional customer service representative for an e-commerce store.
 
 Product: $product_name
+Product Type: $product_type
+$rating_context
 Customer Review: "$review_text"
 
-Generate a professional, empathetic response to this review. The response should:
-1. Acknowledge the customer's feedback
-2. Show genuine concern (for negative reviews)
-3. Offer a concrete solution or next step
-4. Be 2-3 sentences maximum
-5. Be warm and human, not robotic
+Sentiment Analysis: $sentiment (confidence: $score)
 
-Generate ONLY the response text, no quotes or extra formatting.
+Your task: Generate a brief, professional response to this $sentiment review.
+
+Guidelines:
+1. Tone: Be $tone - match the customer's energy
+2. Length: 2-3 sentences maximum (concise and actionable)
+3. Focus: 
+   - Acknowledge their specific feedback
+   - Show genuine concern (if negative)
+   - Offer a concrete solution, improvement, or next step
+4. Style: Professional but warm, not robotic
+5. Avoid: Defensive language, excuses, generic responses
+6. Call to action: For negative reviews, offer help (email, support ticket, return/refund)
+
+Generate ONLY the response text, nothing else. Do not include quotes, formatting, or meta-commentary.
 PROMPT;
 	}
 
@@ -171,6 +215,12 @@ PROMPT;
 					),
 				),
 			),
+			'safety_settings' => array(
+				array(
+					'category' => 'HARM_CATEGORY_UNSPECIFIED',
+					'threshold' => 'BLOCK_NONE',
+				),
+			),
 		);
 
 		$args = array(
@@ -180,6 +230,7 @@ PROMPT;
 			),
 			'timeout'     => 30,
 			'sslverify'   => true,
+			'user-agent'  => 'WooCommerce-AI-Review-Manager/' . WC_AI_REVIEW_MANAGER_VERSION,
 		);
 
 		$response = wp_remote_post( $url, $args );
@@ -194,6 +245,7 @@ PROMPT;
 		if ( 200 !== $status_code ) {
 			$error_data = json_decode( $body, true );
 			$error_msg  = isset( $error_data['error']['message'] ) ? $error_data['error']['message'] : 'Unknown error';
+			error_log( 'Gemini API Error (' . $status_code . '): ' . $error_msg );
 			throw new \Exception( 'Gemini API error: ' . $error_msg );
 		}
 
@@ -223,7 +275,7 @@ PROMPT;
 
 		try {
 			$sentiment_data = Sentiment_Analyzer::analyze( $review_text );
-			return self::generate_response( $product->get_id(), $review_text, $sentiment_data );
+			return self::generate_response( $product->get_id(), $review_text, $sentiment_data, $comment );
 		} catch ( \Exception $e ) {
 			throw new \Exception( 'Failed to generate response: ' . $e->getMessage() );
 		}
