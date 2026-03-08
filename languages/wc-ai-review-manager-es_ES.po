@@ -1,0 +1,315 @@
+# Spanish translation for WooCommerce AI Review Manager
+# Copyright (C) 2026 Odin Collective
+# This file is distributed under the same license as the WooCommerce AI Review Manager plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce AI Review Manager 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/valhalla-open-org/wc-ai-review-manager/issues\n"
+"POT-Creation-Date: 2026-03-08 06:14+0100\n"
+"PO-Revision-Date: 2026-03-08 06:15+0100\n"
+"Last-Translator: Loki <loki@example.com>\n"
+"Language-Team: Spanish\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: wc-ai-review-manager\n"
+
+msgid "WooCommerce AI Review Manager requires WooCommerce to be installed and activated."
+msgstr "El Gestor de Reseñas de IA de WooCommerce requiere que WooCommerce esté instalado y activado."
+
+msgid "WooCommerce is required to activate WooCommerce AI Review Manager."
+msgstr "WooCommerce es necesario para activar el Gestor de Reseñas de IA de WooCommerce."
+
+msgid "AI Review Manager"
+msgstr "Gestor de Reseñas de IA"
+
+msgid "Review Sentiment Analysis"
+msgstr "Análisis de Sentimiento de Reseñas"
+
+msgid "Sentiment Analytics"
+msgstr "Análisis de Sentimiento"
+
+msgid "No reviews analyzed in the last 30 days."
+msgstr "No hay reseñas analizadas en los últimos 30 días."
+
+msgid "Total reviews analyzed: <strong>%d</strong> in the last 30 days"
+msgstr "Total de reseñas analizadas: <strong>%d</strong> en los últimos 30 días"
+
+msgid "Last 7 Days"
+msgstr "Últimos 7 días"
+
+msgid "Last 30 Days"
+msgstr "Últimos 30 días"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Positive 😊"
+msgstr "Positivo 😊"
+
+msgid "Neutral 😐"
+msgstr "Neutral 😐"
+
+msgid "Negative 😞"
+msgstr "Negativo 😞"
+
+msgid "Positive"
+msgstr "Positivo"
+
+msgid "Neutral"
+msgstr "Neutral"
+
+msgid "Negative"
+msgstr "Negativo"
+
+msgid "Percentage"
+msgstr "Porcentaje"
+
+msgid "Count"
+msgstr "Recuento"
+
+msgid "Pending AI Responses"
+msgstr "Respuestas de IA Pendientes"
+
+msgid "No pending responses."
+msgstr "Sin respuestas pendientes."
+
+msgid "Review & Respond"
+msgstr "Reseña y Respuesta"
+
+msgid "View all %d pending responses"
+msgstr "Ver todas las %d respuestas pendientes"
+
+msgid "Review:"
+msgstr "Reseña:"
+
+msgid "AI Suggested Response:"
+msgstr "Respuesta Sugerida por IA:"
+
+msgid "Sentiment"
+msgstr "Sentimiento"
+
+msgid "Email Templates"
+msgstr "Plantillas de Correo Electrónico"
+
+msgid "Add New Email Template"
+msgstr "Agregar Nueva Plantilla de Correo Electrónico"
+
+msgid "Edit Email Template"
+msgstr "Editar Plantilla de Correo Electrónico"
+
+msgid "View Email Template"
+msgstr "Ver Plantilla de Correo Electrónico"
+
+msgid "All Email Templates"
+msgstr "Todas las Plantillas de Correo Electrónico"
+
+msgid "New Email Template"
+msgstr "Nueva Plantilla de Correo Electrónico"
+
+msgid "No email templates found."
+msgstr "No se encontraron plantillas de correo electrónico."
+
+msgid "No email templates found in Trash."
+msgstr "No se encontraron plantillas de correo electrónico en la papelera."
+
+msgid "Default Template"
+msgstr "Plantilla Predeterminada"
+
+msgid "Template Editor"
+msgstr "Editor de Plantillas"
+
+msgid "Use HTML and CSS to design your email template. Available placeholders are listed on the right."
+msgstr "Utilice HTML y CSS para diseñar su plantilla de correo electrónico. Los marcadores de posición disponibles se enumeran a la derecha."
+
+msgid "Available Placeholders"
+msgstr "Marcadores de Posición Disponibles"
+
+msgid "Quick Insert Placeholders:"
+msgstr "Insertar Rápidamente Marcadores de Posición:"
+
+msgid "Customer Name"
+msgstr "Nombre del Cliente"
+
+msgid "Store Name"
+msgstr "Nombre de la Tienda"
+
+msgid "Product List"
+msgstr "Lista de Productos"
+
+msgid "Review Link"
+msgstr "Enlace de Reseña"
+
+msgid "Expiry Date"
+msgstr "Fecha de Vencimiento"
+
+msgid "Placeholder"
+msgstr "Marcador de Posición"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Your store name"
+msgstr "El nombre de tu tienda"
+
+msgid "Customer's first name"
+msgstr "Nombre del cliente"
+
+msgid "List of purchased products with links"
+msgstr "Lista de productos comprados con enlaces"
+
+msgid "Direct link to leave a review"
+msgstr "Enlace directo para dejar una reseña"
+
+msgid "Date when review link expires (30 days from now)"
+msgstr "Fecha en la que expira el enlace de reseña (30 días a partir de ahora)"
+
+msgid "Order ID/number"
+msgstr "Número de Pedido"
+
+msgid "Date when order was placed"
+msgstr "Fecha en que se realizó el pedido"
+
+msgid "Live Preview"
+msgstr "Vista Previa en Vivo"
+
+msgid "Preview will appear here as you edit the template."
+msgstr "La vista previa aparecerá aquí mientras edita la plantilla."
+
+msgid "Loading preview..."
+msgstr "Cargando vista previa..."
+
+msgid "Note: Preview uses sample data. Actual emails will use real customer and product information."
+msgstr "Nota: La vista previa utiliza datos de muestra. Los correos electrónicos reales utilizarán información real del cliente y del producto."
+
+msgid "Template Statistics"
+msgstr "Estadísticas de Plantilla"
+
+msgid "characters"
+msgstr "caracteres"
+
+msgid "lines"
+msgstr "líneas"
+
+msgid "placeholders"
+msgstr "marcadores de posición"
+
+msgid "Set as default template"
+msgstr "Establecer como plantilla predeterminada"
+
+msgid "This template will be used for all review invitations."
+msgstr "Esta plantilla se utilizará para todas las invitaciones de reseña."
+
+msgid "Template not found"
+msgstr "Plantilla no encontrada"
+
+msgid "Invalid template ID"
+msgstr "ID de plantilla no válido"
+
+msgid "Insufficient permissions"
+msgstr "Permisos insuficientes"
+
+msgid "Invalid nonce"
+msgstr "Nonce no válido"
+
+msgid "Failed to duplicate template."
+msgstr "Error al duplicar la plantilla."
+
+msgid "Template duplicated successfully"
+msgstr "Plantilla duplicada exitosamente"
+
+msgid "The template is empty. Are you sure you want to save?"
+msgstr "La plantilla está vacía. ¿Está seguro de que desea guardar?"
+
+msgid "Duplicate"
+msgstr "Duplicar"
+
+msgid "Duplicating..."
+msgstr "Duplicando..."
+
+msgid "Copy of %s"
+msgstr "Copia de %s"
+
+msgid "Parent Email Template:"
+msgstr "Plantilla de Correo Electrónico Principal:"
+
+msgid "Shortcode"
+msgstr "Código Corto"
+
+msgid "AI Review Manager Settings"
+msgstr "Configuración del Gestor de Reseñas de IA"
+
+msgid "WooCommerce AI Review Manager Settings"
+msgstr "Configuración del Gestor de Reseñas de IA de WooCommerce"
+
+msgid "Configure the WooCommerce AI Review Manager plugin. API key required for sentiment analysis and response generation."
+msgstr "Configure el complemento Gestor de Reseñas de IA de WooCommerce. Se requiere clave API para análisis de sentimiento y generación de respuestas."
+
+msgid "Enable AI Review Manager"
+msgstr "Activar Gestor de Reseñas de IA"
+
+msgid "Enable the review collection and analysis system"
+msgstr "Activar el sistema de recopilación y análisis de reseñas"
+
+msgid "Google Gemini API Key"
+msgstr "Clave API de Google Gemini"
+
+msgid "Get your API key from Google Cloud Console (Gemini API)"
+msgstr "Obtenga su clave API de Google Cloud Console (API Gemini)"
+
+msgid "Send Automatic Review Invitations"
+msgstr "Enviar Invitaciones de Reseña Automáticas"
+
+msgid "Automatically send review invitations when orders are completed"
+msgstr "Envíe automáticamente invitaciones de reseña cuando se completen los pedidos"
+
+msgid "Days After Purchase to Send Invitation"
+msgstr "Días Después de la Compra para Enviar Invitación"
+
+msgid "Days to wait after order completion before sending the review invitation"
+msgstr "Días para esperar después de la finalización del pedido antes de enviar la invitación de reseña"
+
+msgid "Auto-generate Responses for Negative Reviews"
+msgstr "Generar Automáticamente Respuestas para Reseñas Negativas"
+
+msgid "Generate AI responses for negative reviews automatically"
+msgstr "Genere respuestas de IA para reseñas negativas automáticamente"
+
+msgid "Negative Sentiment Threshold (0-1)"
+msgstr "Umbral de Sentimiento Negativo (0-1)"
+
+msgid "Scores below this value are marked as negative (0.4 recommended)"
+msgstr "Las puntuaciones por debajo de este valor se marcan como negativas (se recomienda 0,4)"
+
+msgid "How to Get Your API Key"
+msgstr "Cómo Obtener Su Clave API"
+
+msgid "Go to Google Cloud Console (console.cloud.google.com)"
+msgstr "Vaya a Google Cloud Console (console.cloud.google.com)"
+
+msgid "Create a new project or select an existing one"
+msgstr "Crear un nuevo proyecto o seleccionar uno existente"
+
+msgid "Enable the Gemini API"
+msgstr "Activar la API Gemini"
+
+msgid "Create an API key credential"
+msgstr "Crear una credencial de clave API"
+
+msgid "Paste the key above"
+msgstr "Pegue la clave anterior"
+
+msgid "⭐ Share Your Thoughts About %s"
+msgstr "⭐ Comparta Sus Opiniones Sobre %s"
+
+msgid "Leave a Review"
+msgstr "Dejar una Reseña"
+
+msgid "Gemini API key not configured"
+msgstr "Clave API de Gemini no configurada"
+
+msgid "Error"
+msgstr "Error"
