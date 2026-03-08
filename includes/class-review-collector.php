@@ -178,7 +178,7 @@ class Review_Collector {
 	}
 
 	/**
-	 * Send invitation email with improved copy
+	 * Send invitation email using HTML template
 	 *
 	 * @param string  $customer_email Customer email.
 	 * @param string  $customer_name Customer name.
@@ -186,6 +186,96 @@ class Review_Collector {
 	 * @param WC_Order $order Order object.
 	 */
 	private static function send_invitation_email( $customer_email, $customer_name, $product, $order ) {
+		// Get email template
+		$template = Email_Templates::get_default_template();
+		
+		if ( ! $template ) {
+			// Fallback to plain text if no template exists
+			self::send_plain_invitation_email( $customer_email, $customer_name, $product, $order );
+			return;
+		}
+		
+		$template_html = Email_Templates::get_template_html( $template->ID );
+		
+		// Prepare placeholder data
+		$first_name = explode( ' ', $customer_name )[0];
+		$product_url = get_permalink( $product->get_id() );
+		$product_url = add_query_arg( 'review-form', '1', $product_url );
+		
+		$product_list_html = self::generate_product_list_html( array( $product ), $order );
+		
+		$placeholder_data = array(
+			'customer_name' => $first_name,
+			'store_name'    => get_bloginfo( 'name' ),
+			'product_list'  => $product_list_html,
+			'review_link'   => '<a href="' . esc_url( $product_url ) . '">' . __( 'Leave a Review', 'wc-ai-review-manager' ) . '</a>',
+			'expiry_date'   => date_i18n( get_option( 'date_format' ), strtotime( '+30 days' ) ),
+			'order_date'    => $order->get_date_created() ? $order->get_date_created()->date_i18n( get_option( 'date_format' ) ) : '',
+			'order_number'  => $order->get_order_number(),
+		);
+		
+		// Render template with placeholders
+		$html_content = Email_Templates::render_template( $template_html, $placeholder_data );
+		
+		// Prepare email
+		$to      = $customer_email;
+		$subject = sprintf(
+			__( '⭐ Share Your Thoughts About %s', 'wc-ai-review-manager' ),
+			$product->get_name()
+		);
+		
+		$headers = array(
+			'Content-Type: text/html; charset=UTF-8',
+			'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
+		);
+		
+		/**
+		 * Filter invitation email subject
+		 *
+		 * @param string  $subject Email subject.
+		 * @param WC_Product $product Product object.
+		 * @param WC_Order $order Order object.
+		 */
+		$subject = apply_filters( 'wc_ai_review_manager_invitation_subject', $subject, $product, $order );
+		
+		/**
+		 * Filter invitation email HTML content
+		 *
+		 * @param string  $html_content Email HTML content.
+		 * @param string  $customer_name Customer name.
+		 * @param WC_Product $product Product object.
+		 * @param WC_Order $order Order object.
+		 * @param array   $placeholder_data Placeholder data used.
+		 */
+		$html_content = apply_filters( 'wc_ai_review_manager_invitation_html', $html_content, $customer_name, $product, $order, $placeholder_data );
+		
+		$sent = wp_mail( $to, $subject, $html_content, $headers );
+		
+		if ( ! $sent ) {
+			error_log( 'Failed to send review invitation for product ' . $product->get_id() . ' to ' . $customer_email );
+		}
+		
+		/**
+		 * Fires when invitation email is sent
+		 *
+		 * @param string  $customer_email Customer email.
+		 * @param WC_Product $product Product.
+		 * @param WC_Order $order Order.
+		 * @param bool    $sent Whether email was sent successfully.
+		 * @param string  $template_type 'html' or 'plain'.
+		 */
+		do_action( 'wc_ai_review_manager_invitation_sent', $customer_email, $product, $order, $sent, 'html' );
+	}
+	
+	/**
+	 * Fallback plain text email (used when no template exists)
+	 *
+	 * @param string  $customer_email Customer email.
+	 * @param string  $customer_name Customer name.
+	 * @param WC_Product $product Product object.
+	 * @param WC_Order $order Order object.
+	 */
+	private static function send_plain_invitation_email( $customer_email, $customer_name, $product, $order ) {
 		$to      = $customer_email;
 		$subject = sprintf(
 			__( '⭐ Share Your Thoughts About %s', 'wc-ai-review-manager' ),
@@ -257,8 +347,41 @@ Thank you for supporting us,
 		 * @param WC_Product $product Product.
 		 * @param WC_Order $order Order.
 		 * @param bool    $sent Whether email was sent successfully.
+		 * @param string  $template_type 'html' or 'plain'.
 		 */
-		do_action( 'wc_ai_review_manager_invitation_sent', $customer_email, $product, $order, $sent );
+		do_action( 'wc_ai_review_manager_invitation_sent', $customer_email, $product, $order, $sent, 'plain' );
+	}
+	
+	/**
+	 * Generate HTML for product list
+	 *
+	 * @param WC_Product[] $products Array of product objects.
+	 * @param WC_Order $order Order object.
+	 * @return string HTML product list.
+	 */
+	private static function generate_product_list_html( $products, $order ) {
+		if ( empty( $products ) ) {
+			return '';
+		}
+		
+		$html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+		
+		foreach ( $products as $product ) {
+			$product_url = get_permalink( $product->get_id() );
+			$product_name = $product->get_name();
+			
+			$html .= sprintf(
+				'<li style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+					<a href="%s" style="color: #007cba; text-decoration: none; font-weight: bold;">%s</a>
+				</li>',
+				esc_url( $product_url ),
+				esc_html( $product_name )
+			);
+		}
+		
+		$html .= '</ul>';
+		
+		return $html;
 	}
 
 	/**

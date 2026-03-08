@@ -65,6 +65,7 @@ function wc_ai_review_manager_init() {
 	require_once WC_AI_REVIEW_MANAGER_INC_DIR . 'class-dashboard.php';
 	require_once WC_AI_REVIEW_MANAGER_INC_DIR . 'class-settings.php';
 	require_once WC_AI_REVIEW_MANAGER_INC_DIR . 'class-database.php';
+	require_once WC_AI_REVIEW_MANAGER_INC_DIR . 'class-email-templates.php';
 
 	// Initialize core classes
 	WC_AI_Review_Manager\Database::init();
@@ -72,6 +73,7 @@ function wc_ai_review_manager_init() {
 	WC_AI_Review_Manager\Review_Collector::init();
 	WC_AI_Review_Manager\Review_Response_Generator::init();
 	WC_AI_Review_Manager\Dashboard::init();
+	WC_AI_Review_Manager\Email_Templates::init();
 }
 
 add_action( 'plugins_loaded', 'wc_ai_review_manager_init' );

@@ -1,0 +1,227 @@
+/* Email Templates CSS */
+
+.wc-ai-template-editor .editor-options {
+	margin-bottom: 20px;
+	padding: 15px;
+	background: #f5f5f5;
+	border-radius: 4px;
+	border-left: 4px solid #007cba;
+}
+
+.wc-ai-template-editor .editor-options label {
+	font-weight: 600;
+	display: block;
+	margin-bottom: 8px;
+}
+
+.wc-ai-template-editor .editor-options input[type="checkbox"] {
+	margin-right: 8px;
+}
+
+.wc-ai-template-editor .editor-options .description {
+	margin-top: 8px;
+	font-size: 13px;
+	color: #666;
+	font-style: italic;
+}
+
+.wc-ai-template-editor .template-editor-wrapper {
+	margin-bottom: 20px;
+}
+
+.wc-ai-template-editor .template-editor-wrapper textarea {
+	width: 100%;
+	font-family: monospace;
+	font-size: 13px;
+	line-height: 1.5;
+	padding: 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #f9f9f9;
+	min-height: 400px;
+	resize: vertical;
+}
+
+.wc-ai-template-editor .template-editor-wrapper .description {
+	margin-top: 8px;
+	font-size: 13px;
+	color: #666;
+}
+
+.wc-ai-template-editor .template-variables {
+	margin-top: 20px;
+	padding: 15px;
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.wc-ai-template-editor .template-variables h4 {
+	margin-top: 0;
+	margin-bottom: 12px;
+	color: #23282d;
+}
+
+.wc-ai-template-editor .variable-buttons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 10px;
+}
+
+.wc-ai-template-editor .variable-buttons .button {
+	font-size: 12px;
+	height: auto;
+	padding: 6px 10px;
+	line-height: 1.4;
+}
+
+.wc-ai-template-editor .variable-buttons .button:hover {
+	background: #005a87;
+	border-color: #005a87;
+}
+
+/* Preview container */
+#wc_ai_preview_container {
+	background: white;
+	padding: 20px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	max-height: 400px;
+	overflow-y: auto;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+#wc_ai_preview_container .error {
+	color: #d63638;
+	padding: 10px;
+	background: #f8d7da;
+	border: 1px solid #f5c6cb;
+	border-radius: 4px;
+}
+
+#wc_ai_preview_container p {
+	margin: 0 0 10px 0;
+}
+
+/* Placeholder info box */
+.placeholder-list table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.placeholder-list table thead th {
+	background: #f5f5f5;
+	padding: 10px;
+	text-align: left;
+	border-bottom: 2px solid #ddd;
+	font-weight: 600;
+	color: #23282d;
+}
+
+.placeholder-list table tbody td {
+	padding: 8px 10px;
+	border-bottom: 1px solid #eee;
+	vertical-align: top;
+}
+
+.placeholder-list table tbody tr:hover {
+	background: #f9f9f9;
+}
+
+.placeholder-list table code {
+	background: #f0f0f0;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-family: monospace;
+	font-size: 12px;
+	color: #d63384;
+	white-space: nowrap;
+}
+
+/* Admin columns */
+.column-is_default {
+	width: 60px;
+	text-align: center;
+}
+
+.column-shortcode {
+	width: 200px;
+}
+
+.column-shortcode code {
+	background: #f0f0f0;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-family: monospace;
+	font-size: 12px;
+	color: #d63384;
+	white-space: nowrap;
+}
+
+/* Email preview styling */
+.wc-ai-email-preview {
+	font-family: Arial, sans-serif;
+	line-height: 1.6;
+	color: #333;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.wc-ai-email-preview .email-header {
+	background: #f8f8f8;
+	padding: 20px;
+	text-align: center;
+	border-radius: 8px 8px 0 0;
+}
+
+.wc-ai-email-preview .email-content {
+	background: white;
+	padding: 30px;
+	border: 1px solid #eee;
+	border-top: none;
+}
+
+.wc-ai-email-preview .email-footer {
+	background: #f8f8f8;
+	padding: 20px;
+	text-align: center;
+	border-radius: 0 0 8px 8px;
+	font-size: 12px;
+	color: #666;
+}
+
+.wc-ai-email-preview .email-button {
+	display: inline-block;
+	background: #007cba;
+	color: white;
+	padding: 12px 24px;
+	text-decoration: none;
+	border-radius: 4px;
+	margin: 15px 0;
+}
+
+.wc-ai-email-preview .email-product-list {
+	background: #f9f9f9;
+	padding: 15px;
+	border-radius: 4px;
+	margin: 15px 0;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 782px) {
+	.wc-ai-template-editor .variable-buttons {
+		flex-direction: column;
+	}
+	
+	.wc-ai-template-editor .variable-buttons .button {
+		width: 100%;
+		text-align: center;
+	}
+	
+	#wc_ai_preview_container {
+		max-height: 300px;
+	}
+}
