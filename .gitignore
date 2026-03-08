@@ -1,0 +1,45 @@
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Node modules (if using build tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# PHP
+vendor/
+composer.lock
+
+# Logs
+*.log
+logs/
+
+# Testing
+tests/coverage/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp

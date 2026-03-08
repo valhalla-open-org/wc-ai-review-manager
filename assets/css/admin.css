@@ -1,0 +1,193 @@
+/**
+ * Admin styles for WooCommerce AI Review Manager
+ */
+
+.wc-ai-review-manager {
+	margin-top: 20px;
+}
+
+.wc-ai-review-manager .card {
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	background: white;
+	padding: 20px;
+	margin-top: 20px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wc-ai-review-manager .card h3 {
+	margin-top: 0;
+	color: #23282d;
+}
+
+.wc-ai-review-manager .card ol {
+	margin-left: 20px;
+}
+
+.wc-ai-review-manager .card li {
+	margin-bottom: 10px;
+	line-height: 1.6;
+}
+
+/* Settings form */
+.form-table th {
+	text-align: left;
+	padding: 13px 0;
+	width: 200px;
+	vertical-align: top;
+}
+
+.form-table td {
+	padding: 13px;
+}
+
+.form-table input[type="password"],
+.form-table input[type="text"],
+.form-table input[type="number"],
+.form-table select,
+.form-table textarea {
+	width: 100%;
+	max-width: 500px;
+}
+
+.form-table input[type="checkbox"] {
+	margin-right: 5px;
+}
+
+.form-table .description {
+	display: block;
+	font-size: 13px;
+	color: #666;
+	margin-top: 5px;
+	font-style: italic;
+}
+
+/* Status indicators */
+.status-badge {
+	display: inline-block;
+	padding: 4px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-badge.enabled {
+	background-color: #d4edda;
+	color: #155724;
+}
+
+.status-badge.disabled {
+	background-color: #f8d7da;
+	color: #721c24;
+}
+
+.status-badge.pending {
+	background-color: #fff3cd;
+	color: #856404;
+}
+
+/* Response cards */
+.response-card {
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	padding: 15px;
+	margin-bottom: 15px;
+	background: white;
+}
+
+.response-card .review {
+	background-color: #f5f5f5;
+	padding: 10px;
+	border-radius: 4px;
+	margin-bottom: 10px;
+	border-left: 3px solid #0073aa;
+}
+
+.response-card .ai-response {
+	background-color: #fff9e6;
+	padding: 10px;
+	border-radius: 4px;
+	border-left: 3px solid #ffc107;
+	margin-bottom: 10px;
+}
+
+.response-card .meta {
+	font-size: 13px;
+	color: #666;
+	margin-bottom: 10px;
+}
+
+.response-card .actions {
+	display: flex;
+	gap: 10px;
+	margin-top: 10px;
+}
+
+.response-card .actions .button {
+	margin: 0;
+}
+
+/* Sentiment icons */
+.sentiment-icon {
+	display: inline-block;
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	text-align: center;
+	font-size: 20px;
+	border-radius: 50%;
+	margin-right: 8px;
+}
+
+.sentiment-icon.positive {
+	background-color: #d4edda;
+}
+
+.sentiment-icon.neutral {
+	background-color: #fff3cd;
+}
+
+.sentiment-icon.negative {
+	background-color: #f8d7da;
+}
+
+/* API status */
+.api-status {
+	padding: 10px 15px;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}
+
+.api-status.connected {
+	background-color: #d4edda;
+	border: 1px solid #c3e6cb;
+	color: #155724;
+}
+
+.api-status.disconnected {
+	background-color: #f8d7da;
+	border: 1px solid #f5c6cb;
+	color: #721c24;
+}
+
+.api-status .icon {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+	margin-right: 10px;
+	text-align: center;
+	border-radius: 50%;
+	color: white;
+	font-weight: bold;
+	font-size: 12px;
+}
+
+.api-status.connected .icon {
+	background-color: #28a745;
+}
+
+.api-status.disconnected .icon {
+	background-color: #dc3545;
+}
