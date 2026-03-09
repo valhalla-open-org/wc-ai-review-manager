@@ -13,7 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Sentiment_Analyzer {
 
-	const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 	const CACHE_PREFIX   = 'wc_ai_rm_sentiment_';
 	const CACHE_TTL      = 30 * DAY_IN_SECONDS; // Cache for 30 days
 
@@ -23,13 +22,11 @@ class Sentiment_Analyzer {
 	 * @param string $review_text Review text to analyze.
 	 * @param bool   $use_cache Whether to use cached results.
 	 * @return array Array containing sentiment label and score.
-	 * @throws \Exception If API call fails.
+	 * @throws \Exception If AI call fails.
 	 */
 	public static function analyze( $review_text, $use_cache = true ) {
-		$api_key = Settings::get_setting( 'gemini_api_key' );
-
-		if ( empty( $api_key ) ) {
-			throw new \Exception( __( 'Gemini API key not configured', 'wc-ai-review-manager' ) );
+		if ( ! function_exists( 'wp_ai_client' ) ) {
+			throw new \Exception( __( 'WordPress AI Client is not available', 'wc-ai-review-manager' ) );
 		}
 
 		$review_text = sanitize_text_field( $review_text );
@@ -45,16 +42,30 @@ class Sentiment_Analyzer {
 		// Prepare the prompt for sentiment analysis
 		$prompt = self::build_sentiment_prompt( $review_text );
 
-		// Call Gemini API with retry logic
-		$response = self::call_gemini_api_with_retry( $prompt, $api_key );
+		// Call WP AI Client
+		try {
+			$response = wp_ai_client()->complete( array(
+				'prompt' => $prompt,
+				'format' => 'json',
+			) );
 
-		// Parse the response
-		$result = self::parse_sentiment_response( $response );
+			if ( is_wp_error( $response ) ) {
+				throw new \Exception( 'AI request failed: ' . $response->get_error_message() );
+			}
 
-		// Cache the result
-		self::cache_analysis( $review_text, $result );
+			$body = $response['content'];
+			
+			// Parse the response
+			$result = self::parse_sentiment_response( $body );
 
-		return $result;
+			// Cache the result
+			self::cache_analysis( $review_text, $result );
+
+			return $result;
+		} catch ( \Exception $e ) {
+			error_log( 'Sentiment analysis error: ' . $e->getMessage() );
+			throw $e;
+		}
 	}
 
 	/**
@@ -109,107 +120,13 @@ PROMPT;
 	}
 
 	/**
-	 * Call Google Gemini API with retry logic
+	 * Parse sentiment response from AI
 	 *
-	 * @param string $prompt Prompt text.
-	 * @param string $api_key API key.
-	 * @param int    $retry_count Current retry count.
-	 * @return string API response text.
-	 * @throws \Exception If request fails after retries.
-	 */
-	private static function call_gemini_api_with_retry( $prompt, $api_key, $retry_count = 0 ) {
-		$max_retries = 3;
-
-		try {
-			return self::call_gemini_api( $prompt, $api_key );
-		} catch ( \Exception $e ) {
-			if ( $retry_count < $max_retries ) {
-				// Exponential backoff: 1s, 2s, 4s
-				$wait_seconds = pow( 2, $retry_count );
-				sleep( $wait_seconds );
-				return self::call_gemini_api_with_retry( $prompt, $api_key, $retry_count + 1 );
-			}
-
-			throw $e;
-		}
-	}
-
-	/**
-	 * Call Google Gemini API
-	 *
-	 * @param string $prompt Prompt text.
-	 * @param string $api_key API key.
-	 * @return string API response text.
-	 * @throws \Exception If request fails.
-	 */
-	private static function call_gemini_api( $prompt, $api_key ) {
-		$request_body = array(
-			'contents' => array(
-				array(
-					'parts' => array(
-						array(
-							'text' => $prompt,
-						),
-					),
-				),
-			),
-			// Add safety settings to improve response quality
-			'safety_settings' => array(
-				array(
-					'category' => 'HARM_CATEGORY_UNSPECIFIED',
-					'threshold' => 'BLOCK_NONE',
-				),
-			),
-		);
-
-		$args = array(
-			'body'        => wp_json_encode( $request_body ),
-			'headers'     => array(
-				'Content-Type' => 'application/json',
-			),
-			'timeout'     => 30,
-			'sslverify'   => true,
-			'user-agent'  => 'WooCommerce-AI-Review-Manager/' . WC_AI_REVIEW_MANAGER_VERSION,
-		);
-
-		$url      = self::GEMINI_API_URL . '?key=' . urlencode( $api_key );
-		$response = wp_remote_post( $url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			throw new \Exception( 'API request failed: ' . $response->get_error_message() );
-		}
-
-		$status_code = wp_remote_retrieve_response_code( $response );
-		$body        = wp_remote_retrieve_body( $response );
-
-		if ( 200 !== $status_code ) {
-			$error_data = json_decode( $body, true );
-			$error_msg  = isset( $error_data['error']['message'] ) ? $error_data['error']['message'] : 'Unknown error';
-
-			// Log errors for debugging
-			error_log( 'Gemini API Error (' . $status_code . '): ' . $error_msg );
-
-			throw new \Exception( 'Gemini API error: ' . $error_msg );
-		}
-
-		return $body;
-	}
-
-	/**
-	 * Parse sentiment response from Gemini
-	 *
-	 * @param string $response API response body.
+	 * @param string $response AI response content.
 	 * @return array Parsed sentiment data.
 	 * @throws \Exception If parsing fails.
 	 */
-	private static function parse_sentiment_response( $response ) {
-		$data = json_decode( $response, true );
-
-		if ( ! isset( $data['candidates'][0]['content']['parts'][0]['text'] ) ) {
-			throw new \Exception( 'Invalid API response format' );
-		}
-
-		$text   = $data['candidates'][0]['content']['parts'][0]['text'];
+	private static function parse_sentiment_response( $text ) {
 		$parsed = json_decode( $text, true );
 
 		if ( ! is_array( $parsed ) || ! isset( $parsed['sentiment'], $parsed['score'] ) ) {

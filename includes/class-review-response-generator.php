@@ -102,13 +102,11 @@ class Review_Response_Generator {
 	 * @param array  $sentiment_data Sentiment analysis data.
 	 * @param WP_Comment|null $comment Comment object for additional context.
 	 * @return string Generated response.
-	 * @throws \Exception If API call fails.
+	 * @throws \Exception If AI call fails.
 	 */
 	public static function generate_response( $product_id, $review_text, $sentiment_data, $comment = null ) {
-		$api_key = Settings::get_setting( 'gemini_api_key' );
-
-		if ( empty( $api_key ) ) {
-			throw new \Exception( 'Gemini API key not configured' );
+		if ( ! function_exists( 'wp_ai_client' ) ) {
+			throw new \Exception( __( 'WordPress AI Client is not available', 'wc-ai-review-manager' ) );
 		}
 
 		// Get product details for context
@@ -126,24 +124,28 @@ class Review_Response_Generator {
 		// Build prompt for response generation
 		$prompt = self::build_response_prompt( $product_name, $product_type, $review_text, $sentiment_data, $rating );
 
-		// Call API
-		$response_body = self::call_gemini_api( $prompt, $api_key );
+		// Call AI Client
+		try {
+			$response = wp_ai_client()->complete( array(
+				'prompt' => $prompt,
+			) );
 
-		// Extract text
-		$data = json_decode( $response_body, true );
+			if ( is_wp_error( $response ) ) {
+				throw new \Exception( 'AI request failed: ' . $response->get_error_message() );
+			}
 
-		if ( ! isset( $data['candidates'][0]['content']['parts'][0]['text'] ) ) {
-			throw new \Exception( 'Invalid API response' );
+			$response_text = $response['content'];
+
+			// Clean up response (remove markdown code blocks if present)
+			$response_text = preg_replace( '/^```(?:json|text|markdown)?\s*\n?/', '', $response_text );
+			$response_text = preg_replace( '/\n?```$/', '', $response_text );
+			$response_text = trim( $response_text );
+
+			return wp_kses_post( $response_text );
+		} catch ( \Exception $e ) {
+			error_log( 'Review response generation error: ' . $e->getMessage() );
+			throw $e;
 		}
-
-		$response_text = $data['candidates'][0]['content']['parts'][0]['text'];
-
-		// Clean up response (remove markdown code blocks if present)
-		$response_text = preg_replace( '/^```(?:json|text|markdown)?\s*\n?/', '', $response_text );
-		$response_text = preg_replace( '/\n?```$/', '', $response_text );
-		$response_text = trim( $response_text );
-
-		return wp_kses_post( $response_text );
 	}
 
 	/**
@@ -192,64 +194,6 @@ Guidelines:
 
 Generate ONLY the response text, nothing else. Do not include quotes, formatting, or meta-commentary.
 PROMPT;
-	}
-
-	/**
-	 * Call Google Gemini API
-	 *
-	 * @param string $prompt Prompt text.
-	 * @param string $api_key API key.
-	 * @return string API response.
-	 * @throws \Exception If request fails.
-	 */
-	private static function call_gemini_api( $prompt, $api_key ) {
-		$url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . urlencode( $api_key );
-
-		$request_body = array(
-			'contents' => array(
-				array(
-					'parts' => array(
-						array(
-							'text' => $prompt,
-						),
-					),
-				),
-			),
-			'safety_settings' => array(
-				array(
-					'category' => 'HARM_CATEGORY_UNSPECIFIED',
-					'threshold' => 'BLOCK_NONE',
-				),
-			),
-		);
-
-		$args = array(
-			'body'        => wp_json_encode( $request_body ),
-			'headers'     => array(
-				'Content-Type' => 'application/json',
-			),
-			'timeout'     => 30,
-			'sslverify'   => true,
-			'user-agent'  => 'WooCommerce-AI-Review-Manager/' . WC_AI_REVIEW_MANAGER_VERSION,
-		);
-
-		$response = wp_remote_post( $url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			throw new \Exception( 'API request failed: ' . $response->get_error_message() );
-		}
-
-		$status_code = wp_remote_retrieve_response_code( $response );
-		$body        = wp_remote_retrieve_body( $response );
-
-		if ( 200 !== $status_code ) {
-			$error_data = json_decode( $body, true );
-			$error_msg  = isset( $error_data['error']['message'] ) ? $error_data['error']['message'] : 'Unknown error';
-			error_log( 'Gemini API Error (' . $status_code . '): ' . $error_msg );
-			throw new \Exception( 'Gemini API error: ' . $error_msg );
-		}
-
-		return $body;
 	}
 
 	/**

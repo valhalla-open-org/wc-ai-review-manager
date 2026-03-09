@@ -59,15 +59,6 @@ class Settings {
 			'wc_ai_review_manager_group'
 		);
 
-		// API Key field
-		add_settings_field(
-			'gemini_api_key',
-			__( 'Google Gemini API Key', 'wc-ai-review-manager' ),
-			array( __CLASS__, 'render_api_key_field' ),
-			'wc_ai_review_manager_group',
-			'wc_ai_review_manager_section'
-		);
-
 		// Enable plugin toggle
 		add_settings_field(
 			'enabled',
@@ -118,26 +109,7 @@ class Settings {
 	 * Render settings section
 	 */
 	public static function render_section() {
-		echo wp_kses_post( wpautop( __( 'Configure the WooCommerce AI Review Manager plugin. API key required for sentiment analysis and response generation.', 'wc-ai-review-manager' ) ) );
-	}
-
-	/**
-	 * Render API key field
-	 */
-	public static function render_api_key_field() {
-		$settings = self::get_settings();
-		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
-		?>
-		<input type="password" 
-			name="<?php echo esc_attr( self::SETTINGS_KEY . '[gemini_api_key]' ); ?>" 
-			value="<?php echo esc_attr( $api_key ); ?>" 
-			placeholder="paste-your-api-key-here"
-			class="regular-text"
-			style="width: 300px;" />
-		<p class="description">
-			<?php esc_html_e( 'Get your API key from Google Cloud Console (Gemini API)', 'wc-ai-review-manager' ); ?>
-		</p>
-		<?php
+		echo wp_kses_post( wpautop( __( 'Configure the WooCommerce AI Review Manager plugin. AI inference is powered by the WordPress AI Client.', 'wc-ai-review-manager' ) ) );
 	}
 
 	/**
@@ -239,10 +211,6 @@ class Settings {
 	public static function sanitize_settings( $settings ) {
 		$sanitized = array();
 
-		if ( isset( $settings['gemini_api_key'] ) ) {
-			$sanitized['gemini_api_key'] = sanitize_text_field( $settings['gemini_api_key'] );
-		}
-
 		$sanitized['enabled']              = isset( $settings['enabled'] ) ? 1 : 0;
 		$sanitized['auto_invite_enabled']  = isset( $settings['auto_invite_enabled'] ) ? 1 : 0;
 		$sanitized['auto_respond_negative'] = isset( $settings['auto_respond_negative'] ) ? 1 : 0;
@@ -319,17 +287,6 @@ class Settings {
 				<?php do_settings_sections( 'wc_ai_review_manager_group' ); ?>
 				<?php submit_button(); ?>
 			</form>
-
-			<div class="card">
-				<h3><?php esc_html_e( 'How to Get Your API Key', 'wc-ai-review-manager' ); ?></h3>
-				<ol>
-					<li><?php esc_html_e( 'Go to Google Cloud Console (console.cloud.google.com)', 'wc-ai-review-manager' ); ?></li>
-					<li><?php esc_html_e( 'Create a new project or select an existing one', 'wc-ai-review-manager' ); ?></li>
-					<li><?php esc_html_e( 'Enable the Gemini API', 'wc-ai-review-manager' ); ?></li>
-					<li><?php esc_html_e( 'Create an API key credential', 'wc-ai-review-manager' ); ?></li>
-					<li><?php esc_html_e( 'Paste the key above', 'wc-ai-review-manager' ); ?></li>
-				</ol>
-			</div>
 		</div>
 		<?php
 	}
